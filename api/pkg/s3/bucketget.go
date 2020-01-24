@@ -50,7 +50,7 @@ func (s *APIService) BucketGet(request *restful.Request, response *restful.Respo
 		return
 	}
 
-	rsp := CreateListOfListObjectsResponse(bucketName, &req, lsRsp)
+	rsp := CreateListObjectsResponse(bucketName, &req, lsRsp)
 	log.Debugf("rsp:%+v\n", rsp)
 	// Write success response.
 	response.WriteEntity(rsp)
@@ -123,19 +123,10 @@ func parseListObjectsQuery(query url.Values) (request s3.ListObjectsRequest, err
 	return
 }
 
-func CreateListOfListObjectsResponse(bucketName string, request *s3.ListObjectsRequest,
-	listRsp *s3.ListObjectsResponse) (response []datatype.ListObjectsResponse) {
-	for _, o := range listRsp.ListOfListOfObjects {
-		response = append(response, CreateListObjectsResponse(bucketName, request, o, listRsp))
-	}
-
-	return
-}
-
 // this function refers to GenerateListObjectsResponse in api-response.go from Minio Cloud Storage.
 func CreateListObjectsResponse(bucketName string, request *s3.ListObjectsRequest,
-	listObjects *s3.ListObjects,listRsp *s3.ListObjectsResponse) (response datatype.ListObjectsResponse) {
-	for _, o := range listObjects.Objects {
+	listRsp *s3.ListObjectsResponse) (response datatype.ListObjectsResponse) {
+	for _, o := range listRsp.Objects {
 		obj := datatype.Object{
 			Key:          o.ObjectKey,
 			LastModified: time.Unix(o.LastModified, 0).In(time.Local).Format(timeFormatAMZ),
@@ -144,7 +135,6 @@ func CreateListObjectsResponse(bucketName string, request *s3.ListObjectsRequest
 			StorageClass: o.StorageClass,
 			Location:     o.Location,
 			Tier:         o.Tier,
-			Version:	  o.VersionId,
 		}
 		if request.EncodingType != "" { // only support "url" encoding for now
 			obj.Key = url.QueryEscape(obj.Key)

@@ -1255,8 +1255,6 @@ func (s *s3Service) ListObjects(ctx context.Context, in *pb.ListObjectsRequest, 
 		out.NextMarker = util.Encrypt(out.NextMarker)
 	}
 
-	// handle versioning
-	var mapNameToListOfObjects = make(map[string]pb.ListObjects)
 	objects := make([]*pb.Object, 0, len(retObjects))
 	for _, obj := range retObjects {
 		object := pb.Object{
@@ -1272,49 +1270,16 @@ func (s *s3Service) ListObjects(ctx context.Context, in *pb.ListObjectsRequest, 
 			ContentType:      obj.ContentType,
 			StorageMeta:      obj.StorageMeta,
 		}
-		/*if in.EncodingType != "" { // only support "url" encoding for now
+		if in.EncodingType != "" { // only support "url" encoding for now
 			object.ObjectKey = url.QueryEscape(obj.ObjectKey)
 		} else {
 			object.ObjectKey = obj.ObjectKey
-		}*/
-		object.ObjectKey = obj.ObjectKey
-
+		}
 		object.StorageClass, _ = GetNameFromTier(obj.Tier, utils.OSTYPE_OPENSDS)
 		objects = append(objects, &object)
-		log.Infof("object:%+v\n", object)
-
-		objList, ok := mapNameToListOfObjects[object.ObjectKey]
-		if !ok {
-			// add a new obj list
-			objList = pb.ListObjects{
-				Objects:              make([]*pb.Object, 0),
-				XXX_NoUnkeyedLiteral: struct{}{},
-				XXX_unrecognized:     nil,
-				XXX_sizecache:        0,
-			}
-			objList.Objects = append(objList.Objects, &object)
-			mapNameToListOfObjects[object.ObjectKey] = objList
-		} else {
-			objList.Objects = append(objList.Objects, &object)
-			mapNameToListOfObjects[object.ObjectKey] = objList
-		}
+		log.Debugf("object:%+v\n", object)
 	}
-
-	out.ListOfListOfObjects = make([]*pb.ListObjects, len(mapNameToListOfObjects))
-	var count = 0
-	for _, v := range mapNameToListOfObjects {
-		out.ListOfListOfObjects[count] = &pb.ListObjects{
-			Objects:              nil,
-			XXX_NoUnkeyedLiteral: struct{}{},
-			XXX_unrecognized:     nil,
-			XXX_sizecache:        0,
-		}
-		out.ListOfListOfObjects[count].Objects = make([]*pb.Object, 0)
-		for _, obj := range v.Objects {
-			out.ListOfListOfObjects[count].Objects = append(out.ListOfListOfObjects[count].Objects, obj)
-		}
-		count = count + 1
-	}
+	out.Objects = objects
 	out.Prefixes = appendInfo.Prefixes
 	out.IsTruncated = appendInfo.Truncated
 
@@ -1325,8 +1290,6 @@ func (s *s3Service) ListObjects(ctx context.Context, in *pb.ListObjectsRequest, 
 		out.NextMarker = url.QueryEscape(out.NextMarker)
 	}
 
-	log.Infof("The objects in debug one is : %+v \n", objects)
-	log.Infof("The out debug is : %+v \n", out)
 	err = ErrNoErr
 	return nil
 }
