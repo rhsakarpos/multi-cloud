@@ -63,7 +63,7 @@ type ListObjectsResponse struct {
 }
 
 type ListObjectsResponseAllVersions struct {
-	XMLName xml.Name `xml:"ListBucketResult"`
+	XMLName xml.Name `xml:"ListBucketResultAllVersions"`
 
 	CommonPrefixes []CommonPrefix
 	Delimiter      string
@@ -83,7 +83,7 @@ type ListObjectsResponseAllVersions struct {
 	NextContinuationToken string `xml:",omitempty"`
 	StartAfter            string `xml:",omitempty"`
 
-	Contents [][]Object
+	Contents []ListObjectsResponse
 }
 
 type VersionedListObjectsResponse struct {

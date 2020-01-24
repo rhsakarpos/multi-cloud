@@ -213,10 +213,10 @@ func CreateListObjectsResponseAllVersions(bucketName string, request *s3.ListObj
 	listRsp *s3.ListObjectsResponseAllVersions) (response datatype.ListObjectsResponseAllVersions) {
 
 	i := 0
-	response.Contents = make([][]datatype.Object, len(listRsp.Objects))
+	response.Contents = make([]datatype.ListObjectsResponse, len(listRsp.Objects))
 	for _, ptrArr := range listRsp.Objects {
-		response.Contents[i] = make([]datatype.Object, len(ptrArr.Objects))
-		j := 0
+		response.Contents[i] = datatype.ListObjectsResponse{}
+		response.Contents[i].Contents = make([]datatype.Object, 0, len(ptrArr.Objects))
 		for _, o := range ptrArr.Objects {
 			obj := datatype.Object{
 				Key:          o.ObjectKey,
@@ -233,8 +233,7 @@ func CreateListObjectsResponseAllVersions(bucketName string, request *s3.ListObj
 			if request.FetchOwner {
 				obj.Owner.ID = o.TenantId //TODO: DisplayName
 			}
-			response.Contents[i][j] = obj
-			j = j + 1
+			response.Contents[i].Contents = append(response.Contents[i].Contents, obj)
 		}
 		i = i + 1
 	}
